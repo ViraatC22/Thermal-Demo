@@ -64,6 +64,7 @@ Updated: 2026-07-29
 * Dependencies: TD-004 and valid GitHub authentication.
 * Acceptance: `origin/main` contains the final local commit.
 * Verification: `git status -sb`; `git log origin/main..main --oneline`.
-* Status: BLOCKED
-* Blocker: `gh auth status` reports an invalid token for `ViraatC22`. Run
-  `gh auth login -h github.com`, then `git push origin main`.
+* Status: COMPLETED
+* Commit: `e8bb6f7` plus the GitHub-sync status documentation commit.
+* Result: the existing HTTPS Git credential pushed `main` successfully. The
+  separate GitHub CLI API token remains invalid but was not needed.

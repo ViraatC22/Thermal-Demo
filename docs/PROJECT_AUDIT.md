@@ -122,9 +122,10 @@ the setup and verification commands match the repository.
 
 ## 15. Known blockers and assumptions
 
-The GitHub CLI reports that the saved `ViraatC22` token is invalid, so pushing a
-new local commit is externally blocked until `gh auth login -h github.com` is
-completed. Local development and verification are unaffected.
+The GitHub CLI API token reports as invalid, but the repository's HTTPS Git
+credential successfully fetched from and pushed to the existing `origin`.
+GitHub API operations would require `gh auth login -h github.com`; no such
+operation is required for the completed project.
 
 The material `conductivity` values are treated as display-oriented coefficients,
 consistent with the original source comments, rather than SI-calibrated thermal
