@@ -14,7 +14,7 @@ Updated: 2026-07-29
   imports pass, and evidence is recorded in `PROJECT_AUDIT.md`.
 * Verification: `git status --short`; dependency import; `gh auth status`.
 * Status: COMPLETED
-* Commit: recorded by the recovery documentation commit.
+* Commit: `4c492bb`
 
 ## Milestone 1 — Correct second-law simulation
 
@@ -29,7 +29,7 @@ Updated: 2026-07-29
   state.
 * Verification: `python3 -m unittest discover -s tests -v`.
 * Status: COMPLETED
-* Commit: recorded by the implementation commit.
+* Commit: `4c492bb`
 
 ### TD-003 — Add calculation regression coverage
 
@@ -40,7 +40,7 @@ Updated: 2026-07-29
   extreme Gold case cannot overshoot.
 * Verification: `python3 -m unittest discover -s tests -v`.
 * Status: COMPLETED
-* Commit: recorded by the implementation commit.
+* Commit: `4c492bb`
 
 ## Milestone 2 — Documentation and handoff
 
@@ -54,8 +54,8 @@ Updated: 2026-07-29
 * Acceptance: every documented command has been exercised and limitations are
   explicit.
 * Verification: manual document-to-command comparison.
-* Status: IN_PROGRESS
-* Commit: pending.
+* Status: COMPLETED
+* Commit: `4c492bb` plus the final handoff documentation commit.
 
 ### TD-005 — Push the tested milestone
 

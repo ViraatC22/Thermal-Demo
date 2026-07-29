@@ -95,6 +95,7 @@ than from a first-order approximation.
 *   [Materials](materials.md): List of software tools and libraries used.
 *   [Project audit](docs/PROJECT_AUDIT.md): Recovery findings and completion definition.
 *   [Completion plan](docs/COMPLETION_PLAN.md): Verified work and remaining tasks.
+*   [Final status](docs/FINAL_STATUS.md): Verification results and handoff state.
 
 ## Technologies Used
 *   **Streamlit**: Web interface and interactivity.
