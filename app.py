@@ -7,6 +7,12 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import matplotlib.patheffects as path_effects
 
+from thermodynamics import (
+    MATERIALS,
+    simulation_speed_factor,
+    thermal_exchange_step,
+)
+
 # ==========================================
 # CONFIGURATION & STYLING
 # ==========================================
@@ -133,8 +139,8 @@ with st.sidebar:
     
     # Expandable sections for physics theory
     with st.expander("First Law (Energy)", expanded=False):
-        st.info("**$\Delta U = Q - W$**")
-        st.markdown("""
+        st.info(r"**$\Delta U = Q - W$**")
+        st.markdown(r"""
         Energy is conserved. When you heat a gas:
         1. **$Q$ (Heat)** enters.
         2. Gas expands, doing **$W$ (Work)**.
@@ -142,7 +148,7 @@ with st.sidebar:
         """)
         
     with st.expander("Second Law (Entropy)", expanded=False):
-        st.info("**$\Delta S_{total} > 0$**")
+        st.info(r"**$\Delta S_{total} > 0$**")
         st.markdown("""
         Heat flows spontaneously from **Hot** to **Cold**.
         *   This spreads energy out.
@@ -442,17 +448,6 @@ with tab2:
 
     col_control_2, col_vis_2 = st.columns([1, 2], gap="large")
     
-    # Materials Data Dictionary
-    # c: Specific Heat Capacity (J/kg*K)
-    # k: Thermal Conductivity Factor (arbitrary demo units)
-    MATERIALS = {
-        "Iron": {"c": 450, "k": 0.1},
-        "Aluminum": {"c": 900, "k": 0.2},
-        "Copper": {"c": 385, "k": 0.3},
-        "Gold": {"c": 129, "k": 0.4},
-        "Wood": {"c": 1700, "k": 0.01}
-    }
-    
     with col_control_2:
         st.markdown("### 🎛️ Setup")
         with st.container():
@@ -487,40 +482,31 @@ with tab2:
             hist_time, hist_Th, hist_Tc, hist_S = [], [], [], []
             
             # Simulation Loop Config
-            max_steps = 500
+            max_steps = 5000
             step_count = 0
+            equilibrium_tolerance = 0.05
+            initial_temperature_gap = Th - Tc
             
             progress_bar = st.progress(0)
             
             # Setup Plot for Blocks
             fig_blocks, ax_blocks = plt.subplots(figsize=(6, 2.5))
             
-            # Run until thermal equilibrium (approx 0.05 difference) or max steps
-            while (Th - Tc) > 0.05 and step_count < max_steps:
+            # Run until thermal equilibrium or the defensive iteration limit.
+            while (Th - Tc) > equilibrium_tolerance and step_count < max_steps:
                 step_count += 1
-                
-                # Physics Calculation
-                delta = Th - Tc
-                
-                # Dynamic speed multiplier based on material conductivity
-                # Insulators (low k) need a huge speed boost so the user doesn't wait forever
-                speed_factor = 150
-                if props['k'] < 0.05: speed_factor = 500 
-                
-                # 1. Calculate Heat Flow: Q = k * delta_T * time
-                heat_flow = props['k'] * delta * speed_factor
-                
-                # 2. Calculate Temp Change: dT = Q / (m * c)
-                dT = heat_flow / (mass_block * props['c'])
-                
-                Th_prev, Tc_prev = Th, Tc
-                Th -= dT # Hot gets colder
-                Tc += dT # Cold gets hotter
-                
-                # 3. Calculate Entropy Change: dS = dQ/Tc - dQ/Th
-                # Entropy gain of cold block > Entropy loss of hot block
-                dS = (heat_flow / Tc_prev) - (heat_flow / Th_prev)
-                S_total += dS
+
+                step = thermal_exchange_step(
+                    Th,
+                    Tc,
+                    mass_kg=mass_block,
+                    specific_heat_j_per_kg_k=props["specific_heat"],
+                    conductivity=props["conductivity"],
+                    speed_factor=simulation_speed_factor(props["conductivity"]),
+                )
+                Th = step.hot_temperature_k
+                Tc = step.cold_temperature_k
+                S_total += step.entropy_change_j_per_k
                 
                 # Data Recording
                 hist_time.append(step_count)
@@ -530,7 +516,11 @@ with tab2:
                 
                 # Adaptive Rendering
                 # Rendering every frame is slow. We skip frames as the simulation stabilizes.
-                should_render = (step_count < 20) or (step_count % 5 == 0) or ((Th - Tc) < 0.1)
+                should_render = (
+                    step_count < 20
+                    or step_count % 25 == 0
+                    or (Th - Tc) < 0.1
+                )
                 
                 if should_render:
                     # 1. Update Block Visualization (Matplotlib)
@@ -572,15 +562,27 @@ with tab2:
                     time.sleep(0.01)
                 
                 # Update progress bar based on how much the temperature gap has closed
-                prog = 1.0 - (delta / (t_hot_init - t_cold_init))
+                remaining_gap = max(0.0, Th - Tc)
+                prog = 1.0 - (remaining_gap / initial_temperature_gap)
                 progress_bar.progress(min(1.0, max(0.0, prog)))
             
-            # Final Cleanup: Force equilibrium visuals
-            final_T = (t_hot_init + t_cold_init)/2
-            progress_bar.progress(1.0)
+            # Report the actual terminal state instead of forcing a success.
+            remaining_gap = max(0.0, Th - Tc)
+            progress_bar.progress(
+                min(1.0, max(0.0, 1.0 - remaining_gap / initial_temperature_gap))
+            )
             progress_bar.empty()
-            
-            status_container.success(f"✅ Equilibrium reached at {Th - 273.15:.1f} °C. Total Entropy increased by {S_total:.4f} J/K")
+
+            if remaining_gap <= equilibrium_tolerance:
+                status_container.success(
+                    f"✅ Equilibrium reached at {Th - 273.15:.1f} °C. "
+                    f"Total Entropy increased by {S_total:.4f} J/K"
+                )
+            else:
+                status_container.warning(
+                    "Simulation stopped at its safety limit with a "
+                    f"{remaining_gap:.2f} °C temperature gap remaining."
+                )
             
             # Log Experiment
             st.session_state.history_2nd_law.insert(0, {
